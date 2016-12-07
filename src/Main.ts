@@ -108,6 +108,10 @@ class Main extends egret.DisplayObjectContainer {
         user.addHero(baserka);
         user.show();
 
+        // 一键装备 eg：向装备上同时镶嵌5个宝石
+        
+
+
     }
 
     /**

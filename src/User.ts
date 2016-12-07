@@ -1,4 +1,76 @@
-//@Cache
+var Cache: MethodDecorator = (target: any, propertyName, desc: PropertyDescriptor) => {
+
+    const method = desc.value;
+
+    desc.value = function () {
+
+        //如果战斗力缓存存在并且flag不为脏，跳过获取战斗力的函数,直接使用缓存的战斗力
+        if (this["fightPowerCache"] != null && this["dirtyFlag"] == false) {
+          
+            console.log("use cache");
+            return target["fightPowerCache"];
+        } 
+        else {
+
+            this["dirtyFlag"] = false;
+
+            //得到战斗力缓存的值
+            this["fightPowerCache"] = method.apply(this);
+            return method.apply(this);
+        }
+
+    }
+    return desc;
+}
+
+
+var HpCache: MethodDecorator = (target: any, propertyName, desc: PropertyDescriptor) => {
+
+    const method = desc.value;
+
+    desc.value = function () {
+
+        if (this["hpCache"] != null && this["dirtyFlag"] == false) {
+          
+            console.log("use HpCache");
+            return target["hpCache"];
+        } 
+        else {
+
+            this["dirtyFlag"] = false;
+            this["hpCache"] = method.apply(this);
+            return method.apply(this);
+        }
+
+    }
+    return desc;
+}
+
+
+var attackCache: MethodDecorator = (target: any, propertyName, desc: PropertyDescriptor) => {
+
+    const method = desc.value;
+
+    desc.value = function () {
+
+        if (this["attackCache"] != null && this["dirtyFlag"] == false) {
+          
+            console.log("use attackCache");
+            return target["attackCache"];
+        } 
+        else {
+
+            this["dirtyFlag"] = false;
+            this["attackCache"] = method.apply(this);
+            return method.apply(this);
+        }
+
+    }
+    return desc;
+}
+
+
+
 class User{
 
     gold = 0;
@@ -8,6 +80,10 @@ class User{
     currentExp = 0;
 
     level = 0;
+
+    fightPowerCache = null;
+
+    dirtyFlag = false;
 
     //User与Hero为聚合关系的表现
     heroes : Hero[] = [];
@@ -30,6 +106,8 @@ class User{
         return this.heroes.filter(hero => hero.isInteam);
     }
 
+
+    //@Cache
     get fightPower(){
 
         var result = 0;
@@ -39,9 +117,11 @@ class User{
         return result;
     }
 
+
     public addHero(hero : Hero){
 
         this.heroes.push(hero);
+        this.dirtyFlag = true;
 
     }
 
@@ -59,17 +139,25 @@ class User{
 
 class Hero{
 
-    isInteam : boolean = false;
+    public isInteam : boolean = false;
 
-    baseHp = 0;
+    private baseHp = 0;
 
-    baseAttack = 0;
+    private baseAttack = 0;
 
-    level = 0;
+    private  level = 0;
 
-    value = 0;
+    private  value = 0;
 
-    equipments : Equipment[] = [];
+    private equipments : Equipment[] = [];
+
+    private dirtyFlag = false;
+
+    private fightPowerCache = null;
+
+    private hpCache = null;
+
+    private attackPowerCache = null;
 
     constructor(baseHp : number, baseAttack : number, value : number){
 
@@ -81,7 +169,7 @@ class Hero{
 
     }
 
-
+    //@HpCache
     get hp(){
 
         var result = 0;
@@ -89,6 +177,7 @@ class Hero{
         return result + this.baseHp + (1 + 0.2 * this.value) * this.level;
     }
 
+    //@attackCache
     get attack(){
 
         var result = 0;
@@ -98,6 +187,7 @@ class Hero{
         return result + this.baseAttack + (1 + 0.3 * this.value) * this.level;
     }
 
+    //@Cache
     get fightPower(){
 
         var result = 0;
@@ -109,6 +199,8 @@ class Hero{
     public addEquipment(equipment : Equipment){
 
         this.equipments.push(equipment);
+        this.dirtyFlag = true;
+
     }
 
     public show(){
@@ -134,6 +226,14 @@ class Equipment{
 
     private baseHp = 0;
 
+    private fightPowerCache = null;
+
+    private dirtyFlag = false;
+
+    private hpCache = null;
+
+    private attackPowerCache = null;
+
     constructor(quality : equipmentQuality, baseAttack : number, baseHp : number){
 
         this.quality = quality;
@@ -141,6 +241,8 @@ class Equipment{
         this.baseHp = baseHp;
     }
 
+
+    //@attackCache
     get attackBoost(){
 
         var result = 0;
@@ -148,6 +250,7 @@ class Equipment{
         return result + (this.quality * 20) + this.baseAttack;
     }
 
+    //@HpCache
     get hpBoost(){
 
         var result = 0;
@@ -155,10 +258,11 @@ class Equipment{
         return result + (this.quality * 10) + this.baseHp;
     }
 
+    //@Cache
     get fightPower(){
 
         var result = 0;
-        this.jewels.forEach(e => result += e.fightPower);
+        this.jewels.forEach(e => result += e.fightPower);       
         return result + (this.hpBoost * 300 + this.attackBoost * 500) * 0.8;
 
     }
@@ -166,6 +270,8 @@ class Equipment{
     public addJewel(jewel : Jewel){
 
         this.jewels.push(jewel);
+        this.dirtyFlag = true;
+
     }
 
     public show(){
