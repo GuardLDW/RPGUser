@@ -213,6 +213,27 @@ class Hero{
         console.log("fightPower:" + this.fightPower);
     }
 
+
+    public getLevel(){
+
+        return this.level;
+    }
+
+    public getAttack(){
+
+        return this.attack;
+    }
+
+    public getHp(){
+
+        return this.hp;
+    }
+
+    public getValue(){
+
+        return this.value;
+    }
+
 }
 
 

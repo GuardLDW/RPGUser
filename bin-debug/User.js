@@ -1,10 +1,58 @@
-//@Cache
+var Cache = function (target, propertyName, desc) {
+    var method = desc.value;
+    desc.value = function () {
+        //如果战斗力缓存存在并且flag不为脏，跳过获取战斗力的函数,直接使用缓存的战斗力
+        if (this["fightPowerCache"] != null && this["dirtyFlag"] == false) {
+            console.log("use cache");
+            return target["fightPowerCache"];
+        }
+        else {
+            this["dirtyFlag"] = false;
+            //得到战斗力缓存的值
+            this["fightPowerCache"] = method.apply(this);
+            return method.apply(this);
+        }
+    };
+    return desc;
+};
+var HpCache = function (target, propertyName, desc) {
+    var method = desc.value;
+    desc.value = function () {
+        if (this["hpCache"] != null && this["dirtyFlag"] == false) {
+            console.log("use HpCache");
+            return target["hpCache"];
+        }
+        else {
+            this["dirtyFlag"] = false;
+            this["hpCache"] = method.apply(this);
+            return method.apply(this);
+        }
+    };
+    return desc;
+};
+var attackCache = function (target, propertyName, desc) {
+    var method = desc.value;
+    desc.value = function () {
+        if (this["attackCache"] != null && this["dirtyFlag"] == false) {
+            console.log("use attackCache");
+            return target["attackCache"];
+        }
+        else {
+            this["dirtyFlag"] = false;
+            this["attackCache"] = method.apply(this);
+            return method.apply(this);
+        }
+    };
+    return desc;
+};
 var User = (function () {
     function User() {
         this.gold = 0;
         this.undealGold = 0;
         this.currentExp = 0;
         this.level = 0;
+        this.fightPowerCache = null;
+        this.dirtyFlag = false;
         //User与Hero为聚合关系的表现
         this.heroes = [];
         this.gold = 0;
@@ -22,6 +70,7 @@ var User = (function () {
         }
     );
     d(p, "fightPower"
+        //@Cache
         ,function () {
             var result = 0;
             //forEach : 将数组中每个元素都执行
@@ -31,6 +80,7 @@ var User = (function () {
     );
     p.addHero = function (hero) {
         this.heroes.push(hero);
+        this.dirtyFlag = true;
     };
     p.show = function () {
         console.log("User:");
@@ -51,6 +101,10 @@ var Hero = (function () {
         this.level = 0;
         this.value = 0;
         this.equipments = [];
+        this.dirtyFlag = false;
+        this.fightPowerCache = null;
+        this.hpCache = null;
+        this.attackPowerCache = null;
         this.level = 1;
         this.isInteam = true;
         this.baseAttack = baseAttack;
@@ -59,6 +113,7 @@ var Hero = (function () {
     }
     var d = __define,c=Hero,p=c.prototype;
     d(p, "hp"
+        //@HpCache
         ,function () {
             var result = 0;
             this.equipments.forEach(function (e) { return result += e.hpBoost; });
@@ -66,6 +121,7 @@ var Hero = (function () {
         }
     );
     d(p, "attack"
+        //@attackCache
         ,function () {
             var result = 0;
             //将所有装备的攻击力累加
@@ -74,6 +130,7 @@ var Hero = (function () {
         }
     );
     d(p, "fightPower"
+        //@Cache
         ,function () {
             var result = 0;
             this.equipments.forEach(function (e) { return result += e.fightPower; });
@@ -82,6 +139,7 @@ var Hero = (function () {
     );
     p.addEquipment = function (equipment) {
         this.equipments.push(equipment);
+        this.dirtyFlag = true;
     };
     p.show = function () {
         console.log("Hero:");
@@ -91,6 +149,18 @@ var Hero = (function () {
         console.log("hp:" + this.hp);
         console.log("fightPower:" + this.fightPower);
     };
+    p.getLevel = function () {
+        return this.level;
+    };
+    p.getAttack = function () {
+        return this.attack;
+    };
+    p.getHp = function () {
+        return this.hp;
+    };
+    p.getValue = function () {
+        return this.value;
+    };
     return Hero;
 }());
 egret.registerClass(Hero,'Hero');
@@ -99,12 +169,17 @@ var Equipment = (function () {
         this.jewels = [];
         this.baseAttack = 0;
         this.baseHp = 0;
+        this.fightPowerCache = null;
+        this.dirtyFlag = false;
+        this.hpCache = null;
+        this.attackPowerCache = null;
         this.quality = quality;
         this.baseAttack = baseAttack;
         this.baseHp = baseHp;
     }
     var d = __define,c=Equipment,p=c.prototype;
     d(p, "attackBoost"
+        //@attackCache
         ,function () {
             var result = 0;
             this.jewels.forEach(function (e) { return result += e.attackBoost; });
@@ -112,6 +187,7 @@ var Equipment = (function () {
         }
     );
     d(p, "hpBoost"
+        //@HpCache
         ,function () {
             var result = 0;
             this.jewels.forEach(function (e) { return result += e.hpBoost; });
@@ -119,6 +195,7 @@ var Equipment = (function () {
         }
     );
     d(p, "fightPower"
+        //@Cache
         ,function () {
             var result = 0;
             this.jewels.forEach(function (e) { return result += e.fightPower; });
@@ -127,6 +204,7 @@ var Equipment = (function () {
     );
     p.addJewel = function (jewel) {
         this.jewels.push(jewel);
+        this.dirtyFlag = true;
     };
     p.show = function () {
         console.log("Equipment:");
